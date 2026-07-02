@@ -47,6 +47,11 @@
         </div>
       </div>
       <div class="topbar-actions">
+        <div class="nav-tabs">
+          <button class="nav-tab active" id="tabDashboard" onclick="switchTab('dashboard')">Dashboard</button>
+          <button class="nav-tab" id="tabEmployees" onclick="switchTab('employees')">พนักงาน</button>
+          <button class="nav-tab" id="tabUsers" onclick="switchTab('users')">จัดการผู้ใช้</button>
+        </div>
         <div class="live-dot"><span></span>Live</div>
         <div class="bell" id="bellWrap">
           <span>&#128276;</span>
@@ -64,6 +69,7 @@
       </div>
     </header>
 
+    <div id="dashboardContent">
     <section id="kpis" class="kpis"></section>
 
     <section class="toolbar">
@@ -122,6 +128,58 @@
 
       <div id="adminUserList" class="admin-user-list"></div>
     </section>
+
+    </div><!-- end dashboardContent -->
+
+    <div id="employeesPage" style="display:none;"></div>
+
+    <!-- Users management full page -->
+    <div id="usersPage" style="display:none; padding:20px 28px 28px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <div style="font-size:18px; font-weight:700; color:var(--navy);">จัดการผู้ใช้</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:2px;">เพิ่ม แก้ไขสิทธิ์ และดูรายชื่อสมาชิกทั้งหมด</div>
+        </div>
+      </div>
+
+      <!-- Add user card -->
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:16px; box-shadow:var(--shadow-sm);">
+        <div style="font-size:13px; font-weight:700; color:var(--muted); margin-bottom:14px; text-transform:uppercase; letter-spacing:0.5px;">เพิ่มผู้ใช้ใหม่</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr auto auto; gap:10px; align-items:end;">
+          <div>
+            <div style="font-size:11px; color:var(--muted); margin-bottom:5px; font-weight:600;">ชื่อ-นามสกุล</div>
+            <input id="up_name" class="field" placeholder="เช่น สมชาย ใจดี">
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--muted); margin-bottom:5px; font-weight:600;">อีเมลบริษัท</div>
+            <input id="up_email" class="field" placeholder="email@akararesources.com" type="email">
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--muted); margin-bottom:5px; font-weight:600;">สิทธิ์</div>
+            <select id="up_role" class="field" style="width:110px;">
+              <option value="user">User</option>
+              <option value="hr">HR</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <button id="up_addBtn" class="btn-primary" style="width:auto; padding:10px 20px;">+ เพิ่มผู้ใช้</button>
+        </div>
+        <div id="up_msg" style="font-size:12px; margin-top:10px; min-height:16px;"></div>
+        <div style="margin-top:10px; padding:10px 14px; background:var(--blue-bg); border-radius:8px; font-size:12px; color:var(--blue-text); line-height:1.6;">
+          หลังเพิ่มแล้ว ส่งลิงก์นี้ให้ผู้ใช้สมัครหรือล็อกอิน → <strong>staff-movement-akara.vercel.app</strong><br>
+          ระบบจะกำหนดสิทธิ์ตามที่ตั้งไว้ให้อัตโนมัติ
+        </div>
+      </div>
+
+      <!-- Users list -->
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-sm); overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border);">
+          <div style="font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px;">รายชื่อสมาชิก</div>
+          <div id="up_count" style="font-size:12px; color:var(--muted2);"></div>
+        </div>
+        <div id="up_userList" style="padding:12px 16px; display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+    </div>
 
     <section class="chart-wrap">
       <div class="chart-card">
@@ -208,5 +266,6 @@
   <script type="module" src="js/firebase-config.js"></script>
   <script type="module" src="js/auth.js"></script>
   <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/employees.js"></script>
 </body>
 </html>
