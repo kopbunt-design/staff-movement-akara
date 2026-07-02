@@ -103,6 +103,23 @@
         <div class="payroll-title">⚙️ จัดการสิทธิ์ผู้ใช้ <span style="font-size:11px; color:var(--muted); font-weight:400;">(เฉพาะ Admin)</span></div>
         <button id="adminRefreshBtn" class="btn-secondary">รีเฟรช</button>
       </div>
+
+      <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:14px;">
+        <div style="font-size:12px; font-weight:700; color:var(--muted); margin-bottom:10px;">+ เพิ่มผู้ใช้ล่วงหน้า</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;">
+          <input id="newUserName" class="field" placeholder="ชื่อ-นามสกุล" style="flex:1; min-width:140px;">
+          <input id="newUserEmail" class="field" placeholder="อีเมล" type="email" style="flex:1; min-width:160px;">
+          <select id="newUserRole" class="field" style="width:100px;">
+            <option value="user">User</option>
+            <option value="hr">HR</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button id="addUserBtn" class="btn-primary" style="width:auto; padding:9px 16px; white-space:nowrap;">เพิ่ม</button>
+        </div>
+        <div id="addUserMsg" style="font-size:11px; margin-top:6px; min-height:14px;"></div>
+        <div style="font-size:11px; color:var(--muted2); margin-top:6px;">เมื่อเพิ่มแล้ว ให้ส่งลิงก์ <strong>staff-movement-akara.vercel.app</strong> ให้เขาสมัครหรือล็อกอินครับ สิทธิ์จะถูกกำหนดให้อัตโนมัติ</div>
+      </div>
+
       <div id="adminUserList" class="admin-user-list"></div>
     </section>
 
