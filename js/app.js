@@ -409,16 +409,18 @@ payrollBtn.addEventListener("click", () => {
 });
 payrollClose.addEventListener("click", () => { payrollReport.style.display = "none"; });
 payrollExportExcel.addEventListener("click", exportPayrollExcel);
-filterMonth.addEventListener("change", () => { if (payrollReport.style.display !== "none") renderPayrollReport(); });
 
-
+function applyFiltersAndRender() {
   const filtered = getFilteredEntries();
   renderFeed(filtered);
 }
 
 searchBox.addEventListener("input", applyFiltersAndRender);
 filterType.addEventListener("change", applyFiltersAndRender);
-filterMonth.addEventListener("change", applyFiltersAndRender);
+filterMonth.addEventListener("change", () => {
+  applyFiltersAndRender();
+  if (payrollReport.style.display !== "none") renderPayrollReport();
+});
 exportBtn.addEventListener("click", exportCSV);
 
 // ===== ADMIN PANEL =====
