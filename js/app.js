@@ -266,7 +266,10 @@ function getFilteredEntries() {
 }
 
 function renderCharts(entries) {
-  if (!window.Chart) return;
+  if (!window.Chart) {
+    setTimeout(() => renderCharts(entries), 300);
+    return;
+  }
   const byMonth = {};
   entries.forEach(e => {
     const d = new Date(e.createdAt);
