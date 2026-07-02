@@ -482,6 +482,7 @@ async function registerUserProfile(user) {
 }
 
 
+function attachListener() {
   if (unsubscribeSnapshot) unsubscribeSnapshot();
   unsubscribeSnapshot = onSnapshot(q, async (snapshot) => {
     const entries = snapshot.docs.map(d => {
