@@ -483,19 +483,47 @@ function loadAdminUsers() {
 }
 document.getElementById("adminRefreshBtn").addEventListener("click", loadAdminUsers);
 
+document.getElementById("addUserBtn").addEventListener("click", async () => {
+  const name = document.getElementById("newUserName").value.trim();
+  const email = document.getElementById("newUserEmail").value.trim();
+  const role = document.getElementById("newUserRole").value;
+  const msgEl = document.getElementById("addUserMsg");
+  if (!name || !email) { msgEl.textContent = "กรุณากรอกชื่อและอีเมล"; msgEl.style.color = "var(--red)"; return; }
+  try {
+    const pendingRef = doc(db, "pendingRoles", email.toLowerCase().replace(/[.#$[\]]/g, "_"));
+    await setDoc(pendingRef, { name, email, role, createdAt: serverTimestamp(), createdBy: currentUser.uid });
+    msgEl.textContent = "เพิ่มสำเร็จ — ส่งลิงก์ให้เขาสมัคร/ล็อกอินได้เลย"; msgEl.style.color = "var(--teal)";
+    document.getElementById("newUserName").value = "";
+    document.getElementById("newUserEmail").value = "";
+    setTimeout(() => { msgEl.textContent = ""; }, 4000);
+  } catch (err) {
+    msgEl.textContent = "เพิ่มไม่สำเร็จ ลองอีกครั้ง"; msgEl.style.color = "var(--red)";
+  }
+});
+
 // บันทึกข้อมูล user ลง userRoles เมื่อล็อกอินครั้งแรก (เพื่อให้ admin เห็นรายชื่อ)
 async function registerUserProfile(user) {
   const ref = doc(db, "userRoles", user.uid);
   const snap = await getDoc(ref);
   if (!snap.exists()) {
+    // เช็คว่า admin เคยกำหนดสิทธิ์ไว้ล่วงหน้าด้วยอีเมลนี้ไหม
+    let role = "user";
+    try {
+      const emailKey = (user.email || "").toLowerCase().replace(/[.#$[\]]/g, "_");
+      const pendingRef = doc(db, "pendingRoles", emailKey);
+      const pendingSnap = await getDoc(pendingRef);
+      if (pendingSnap.exists()) {
+        role = pendingSnap.data().role || "user";
+        await deleteDoc(pendingRef); // ลบ pending หลังนำไปใช้แล้ว
+      }
+    } catch (e) {}
     await setDoc(ref, {
       name: user.displayName || user.email.split("@")[0],
       email: user.email,
-      role: "user",
+      role,
       createdAt: serverTimestamp(),
     });
   } else {
-    // อัปเดตชื่อ/อีเมลล่าสุดเสมอ
     await setDoc(ref, { name: user.displayName || user.email.split("@")[0], email: user.email }, { merge: true });
   }
 }
