@@ -6,7 +6,7 @@ import {
   serverTimestamp, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const db = getFirestore(firebaseApp);
+export const db = getFirestore(firebaseApp);
 const movementsRef = collection(db, "movements");
 const salaryRef = collection(db, "movementSalary");
 const q = query(movementsRef, orderBy("createdAt", "desc"));
@@ -429,7 +429,105 @@ filterMonth.addEventListener("change", () => {
 });
 exportBtn.addEventListener("click", exportCSV);
 
-// ===== ADMIN PANEL =====
+// ===== TAB SWITCHING =====
+const dashboardContent = ["kpis", "adminTab", "chart-wrap-section", "content-section"];
+
+function switchTab(tab) {
+  document.getElementById("tabDashboard").classList.toggle("active", tab === "dashboard");
+  document.getElementById("tabEmployees")?.classList.toggle("active", tab === "employees");
+  document.getElementById("tabUsers").classList.toggle("active", tab === "users");
+
+  const dashboard = document.getElementById("dashboardContent");
+  const employeesPage = document.getElementById("employeesPage");
+  const usersPage = document.getElementById("usersPage");
+
+  [dashboard, employeesPage, usersPage].forEach(el => { if (el) el.style.display = "none"; });
+
+  if (tab === "dashboard") {
+    if (dashboard) dashboard.style.display = "block";
+  } else if (tab === "employees") {
+    if (employeesPage) {
+      employeesPage.style.display = "block";
+      // init employees page if not yet done
+      if (!employeesPage.dataset.initialized) {
+        employeesPage.dataset.initialized = "1";
+        import("./employees.js").then(m => m.initEmployeePage());
+      }
+    }
+  } else if (tab === "users") {
+    if (usersPage) { usersPage.style.display = "block"; loadUsersPage(); }
+  }
+}
+
+let unsubUsersPage = null;
+
+function loadUsersPage() {
+  const listEl = document.getElementById("up_userList");
+  const countEl = document.getElementById("up_count");
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="color:var(--muted2);font-size:13px;padding:8px 0;">กำลังโหลด...</div>';
+  if (unsubUsersPage) unsubUsersPage();
+  unsubUsersPage = onSnapshot(collection(db, "userRoles"), (snap) => {
+    const sorted = snap.docs.sort((a, b) => {
+      const order = { admin: 0, hr: 1, user: 2 };
+      return (order[a.data().role] ?? 3) - (order[b.data().role] ?? 3);
+    });
+    countEl.textContent = `${sorted.length} ผู้ใช้ทั้งหมด`;
+    if (sorted.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--muted2);font-size:13px;padding:16px 0;text-align:center;">ยังไม่มีผู้ใช้ — เพิ่มด้านบนได้เลย</div>';
+      return;
+    }
+    listEl.innerHTML = sorted.map(d => {
+      const data = d.data();
+      const role = data.role || "user";
+      const roleLabel = { admin: "Admin", hr: "HR", user: "User" }[role] || "User";
+      const initial = (data.name || data.email || "?")[0].toUpperCase();
+      const avatarColors = { admin: "#7C3AED", hr: "#059669", user: "#265CAA" };
+      const avatarBg = { admin: "#F5F3FF", hr: "#ECFDF5", user: "#EFF6FF" };
+      return `<div class="admin-user-row" style="position:relative;">
+        <div class="avatar-sm" style="background:${avatarBg[role]||"#EFF6FF"};color:${avatarColors[role]||"#265CAA"};">${initial}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;">${escapeHtml(data.name || "ไม่ระบุ")}</div>
+          <div style="font-size:11px;color:var(--muted2);">${escapeHtml(data.email || d.id)}</div>
+        </div>
+        <span class="role-badge ${role}">${roleLabel}</span>
+        <select class="role-select" data-uid="${d.id}" ${d.id === currentUser?.uid ? "disabled title='ไม่สามารถเปลี่ยนสิทธิ์ตัวเองได้'" : ""}>
+          <option value="user" ${role==="user"?"selected":""}>User</option>
+          <option value="hr" ${role==="hr"?"selected":""}>HR</option>
+          <option value="admin" ${role==="admin"?"selected":""}>Admin</option>
+        </select>
+      </div>`;
+    }).join("");
+    listEl.querySelectorAll(".role-select:not([disabled])").forEach(sel => {
+      sel.addEventListener("change", async () => {
+        const uid = sel.getAttribute("data-uid");
+        sel.disabled = true;
+        await setDoc(doc(db, "userRoles", uid), { role: sel.value }, { merge: true });
+        sel.disabled = false;
+      });
+    });
+  });
+}
+
+document.getElementById("up_addBtn")?.addEventListener("click", async () => {
+  const name = document.getElementById("up_name").value.trim();
+  const email = document.getElementById("up_email").value.trim();
+  const role = document.getElementById("up_role").value;
+  const msgEl = document.getElementById("up_msg");
+  if (!name || !email) { msgEl.textContent = "กรุณากรอกชื่อและอีเมล"; msgEl.style.color = "var(--red)"; return; }
+  try {
+    const emailKey = email.toLowerCase().replace(/[.#$[\]]/g, "_");
+    await setDoc(doc(db, "pendingRoles", emailKey), { name, email, role, createdAt: serverTimestamp(), createdBy: currentUser.uid });
+    msgEl.textContent = `เพิ่ม ${name} สำเร็จ — ส่งลิงก์ให้เขาสมัครได้เลย`; msgEl.style.color = "var(--teal)";
+    document.getElementById("up_name").value = "";
+    document.getElementById("up_email").value = "";
+    setTimeout(() => { msgEl.textContent = ""; }, 5000);
+  } catch (err) {
+    msgEl.textContent = "เพิ่มไม่สำเร็จ กรุณาตรวจสอบสิทธิ์"; msgEl.style.color = "var(--red)";
+  }
+});
+
+
 let unsubAdminUsers = null;
 
 function loadAdminUsers() {
