@@ -266,10 +266,10 @@ function getFilteredEntries() {
 }
 
 function renderCharts(entries) {
-  if (!window.Chart) {
-    setTimeout(() => renderCharts(entries), 1000);
-    return;
-  }
+  const trendEl = document.getElementById("trendChart");
+  const typeEl = document.getElementById("typeChart");
+  if (!trendEl || !typeEl) return;
+
   const byMonth = {};
   entries.forEach(e => {
     const d = new Date(e.createdAt);
@@ -277,45 +277,48 @@ function renderCharts(entries) {
     byMonth[key] = (byMonth[key] || 0) + 1;
   });
   const monthKeys = Object.keys(byMonth).sort().slice(-6);
-  const monthLabels = monthKeys.map(k => {
-    const [y, mo] = k.split("-");
-    return new Date(Number(y), Number(mo) - 1, 1).toLocaleDateString("th-TH", { month: "short" });
-  });
-  const monthData = monthKeys.map(k => byMonth[k]);
+  const maxVal = Math.max(...Object.values(byMonth), 1);
 
-  const trendCtx = document.getElementById("trendChart");
-  if (trendChart) trendChart.destroy();
-  trendChart = new Chart(trendCtx, {
-    type: "line",
-    data: {
-      labels: monthLabels,
-      datasets: [{
-        data: monthData, borderColor: "#265CAA", backgroundColor: "rgba(38,92,170,0.1)",
-        fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: "#265CAA"
-      }]
-    },
-    options: {
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-      maintainAspectRatio: false
-    }
-  });
+  if (monthKeys.length === 0) {
+    trendEl.innerHTML = '<div style="color:var(--muted2);font-size:12px;text-align:center;padding:40px 0;">ยังไม่มีข้อมูล</div>';
+  } else {
+    trendEl.innerHTML = '<div style="display:flex;align-items:flex-end;gap:6px;height:110px;padding-bottom:20px;">' +
+      monthKeys.map(k => {
+        const [y, mo] = k.split("-");
+        const label = new Date(Number(y), Number(mo)-1, 1).toLocaleDateString("th-TH", { month: "short" });
+        const h = Math.max(6, Math.round((byMonth[k] / maxVal) * 80));
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+          <div style="font-size:10px;color:#265CAA;font-weight:700;">${byMonth[k]}</div>
+          <div style="width:100%;height:${h}px;background:#265CAA;border-radius:4px 4px 0 0;opacity:0.85;"></div>
+          <div style="font-size:9px;color:var(--muted2);white-space:nowrap;">${label}</div>
+        </div>`;
+      }).join("") + '</div>';
+  }
 
   const typeCounts = {};
   entries.forEach(e => typeCounts[e.type] = (typeCounts[e.type] || 0) + 1);
-  const typeLabels = Object.keys(typeCounts);
-  const typeColors = { "Transfer": "#265CAA", "Promotion": "#8B5CF6", "Demotion": "#E63329", "Resignation": "#E63329", "Termination": "#E63329", "New Hire": "#1E9A7C", "Retirement": "#FFCA30", "Secondment": "#265CAA" };
-
-  const typeCtx = document.getElementById("typeChart");
-  if (typeChart) typeChart.destroy();
-  typeChart = new Chart(typeCtx, {
-    type: "doughnut",
-    data: {
-      labels: typeLabels,
-      datasets: [{ data: typeLabels.map(t => typeCounts[t]), backgroundColor: typeLabels.map(t => typeColors[t] || "#9AA2BD") }]
-    },
-    options: { plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } }, maintainAspectRatio: false }
-  });
+  const typeColors = {
+    "Transfer":"#265CAA","Promotion":"#7C3AED","Demotion":"#DC2626",
+    "Resignation":"#DC2626","Termination":"#991B1B","New Hire":"#059669",
+    "Retirement":"#F59E0B","Secondment":"#0891B2"
+  };
+  const total = entries.length;
+  if (total === 0) {
+    typeEl.innerHTML = '<div style="color:var(--muted2);font-size:12px;text-align:center;padding:40px 0;">ยังไม่มีข้อมูล</div>';
+  } else {
+    typeEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:7px;">' +
+      Object.entries(typeCounts).map(([type, count]) => {
+        const pct = Math.round((count / total) * 100);
+        const color = typeColors[type] || "#9CA3AF";
+        return `<div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:11px;color:var(--muted);min-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${type}</div>
+          <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${color};border-radius:4px;"></div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:${color};min-width:24px;text-align:right;">${count}</div>
+        </div>`;
+      }).join("") + '</div>';
+  }
 }
 
 function exportCSV() {
@@ -427,21 +430,34 @@ filterMonth.addEventListener("change", () => {
 exportBtn.addEventListener("click", exportCSV);
 
 // ===== ADMIN PANEL =====
-async function loadAdminUsers() {
+let unsubAdminUsers = null;
+
+function loadAdminUsers() {
   const listEl = document.getElementById("adminUserList");
   listEl.innerHTML = '<div style="color:var(--muted2); font-size:13px;">กำลังโหลด...</div>';
-  try {
-    const snap = await getDocs(collection(db, "userRoles"));
+
+  if (unsubAdminUsers) unsubAdminUsers();
+
+  unsubAdminUsers = onSnapshot(collection(db, "userRoles"), (snap) => {
     if (snap.empty) {
-      listEl.innerHTML = '<div style="color:var(--muted2); font-size:13px; padding:12px 0;">ยังไม่มีผู้ใช้ในระบบ — ผู้ใช้จะถูกเพิ่มอัตโนมัติเมื่อล็อกอินครั้งแรก</div>';
+      listEl.innerHTML = '<div style="color:var(--muted2); font-size:13px; padding:12px 0;">ยังไม่มีผู้ใช้ — รอให้ทีมล็อกอินเข้าแอปครั้งแรก ชื่อจะขึ้นอัตโนมัติ</div>';
       return;
     }
-    listEl.innerHTML = snap.docs.map(d => {
+    const sorted = snap.docs.sort((a, b) => {
+      const ra = a.data().role || "user";
+      const rb = b.data().role || "user";
+      const order = { admin: 0, hr: 1, user: 2 };
+      return (order[ra] ?? 3) - (order[rb] ?? 3);
+    });
+    listEl.innerHTML = sorted.map(d => {
       const data = d.data();
       const role = data.role || "user";
       const roleLabel = { admin: "Admin", hr: "HR", user: "User" }[role] || "User";
+      const initial = (data.name || data.email || "?")[0].toUpperCase();
+      const avatarColors = { admin: "#7C3AED", hr: "#059669", user: "#265CAA" };
+      const avatarBg = { admin: "#F5F3FF", hr: "#ECFDF5", user: "#EFF6FF" };
       return `<div class="admin-user-row" data-uid="${d.id}">
-        <div class="avatar-sm" style="background:var(--blue-bg); color:var(--blue);">${(data.name || "?")[0].toUpperCase()}</div>
+        <div class="avatar-sm" style="background:${avatarBg[role]||"#EFF6FF"}; color:${avatarColors[role]||"#265CAA"};">${initial}</div>
         <div style="flex:1; min-width:0;">
           <div class="admin-user-name">${escapeHtml(data.name || "ไม่ระบุ")}</div>
           <div class="admin-user-email">${escapeHtml(data.email || d.id)}</div>
@@ -454,16 +470,16 @@ async function loadAdminUsers() {
         </select>
       </div>`;
     }).join("");
+
     listEl.querySelectorAll(".role-select").forEach(sel => {
       sel.addEventListener("change", async () => {
         const uid = sel.getAttribute("data-uid");
         await setDoc(doc(db, "userRoles", uid), { role: sel.value }, { merge: true });
-        loadAdminUsers();
       });
     });
-  } catch (err) {
-    listEl.innerHTML = '<div style="color:var(--red); font-size:13px;">โหลดไม่สำเร็จ (ตรวจสอบ Firestore Rules)</div>';
-  }
+  }, (err) => {
+    listEl.innerHTML = '<div style="color:var(--red); font-size:13px;">โหลดไม่สำเร็จ ตรวจสอบ Firestore Rules</div>';
+  });
 }
 document.getElementById("adminRefreshBtn").addEventListener("click", loadAdminUsers);
 
