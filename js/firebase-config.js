@@ -9,14 +9,14 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 
-export cconst firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyAOD_q-wWJMWodKX_UPi7xsVWGH3hGudQQ",
   authDomain: "akara-staff-movement.firebaseapp.com",
   projectId: "akara-staff-movement",
   storageBucket: "akara-staff-movement.firebasestorage.app",
   messagingSenderId: "169381503852",
-  appId: "1:169381503852:web:18cb79c33bfb8205840949",
-  measurementId: "G-5ZNF421B1Y"
+  appId: "1:169381503852:web:c9a965473c3b950a840949",
+  measurementId: "G-QK444H4CMB"
 };
 
 export const firebaseApp = initializeApp(firebaseConfig);
