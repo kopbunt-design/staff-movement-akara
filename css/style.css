@@ -180,11 +180,9 @@ body{background:var(--bg); color:var(--text); min-height:100vh;}
 .chart-card{
   flex:2; min-width:300px; background:var(--card); border:1px solid var(--border);
   border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow-sm);
-  height:200px; position:relative;
 }
 .chart-card-small{flex:1; min-width:200px;}
 .chart-title{font-size:12px; font-weight:700; color:var(--muted); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;}
-.chart-card canvas{max-height:140px;}
 
 /* ===== CONTENT ===== */
 .content{display:flex; gap:20px; padding:18px 28px 28px; flex-wrap:wrap;}
