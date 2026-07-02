@@ -267,7 +267,7 @@ function getFilteredEntries() {
 
 function renderCharts(entries) {
   if (!window.Chart) {
-    setTimeout(() => renderCharts(entries), 300);
+    setTimeout(() => renderCharts(entries), 1000);
     return;
   }
   const byMonth = {};
