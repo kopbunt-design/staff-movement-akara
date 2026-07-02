@@ -1,8 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // helper: เช็คว่า user มี role hr หรือ admin หรือเปล่า
     function isHR() {
       return request.auth != null &&
         get(/databases/$(database)/documents/userRoles/$(request.auth.uid)).data.role in ['hr', 'admin'];
@@ -11,8 +9,6 @@ service cloud.firestore {
       return request.auth != null &&
         get(/databases/$(database)/documents/userRoles/$(request.auth.uid)).data.role == 'admin';
     }
-
-    // รายการ staff movement ทั่วไป — ทุกคนที่ล็อกอินแล้วอ่านได้ ไม่มีข้อมูลเงินเดือน
     match /movements/{movementId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
@@ -22,25 +18,25 @@ service cloud.firestore {
       allow update, delete: if request.auth != null
                     && resource.data.createdBy == request.auth.uid;
     }
-
-    // ข้อมูลเงินเดือน/cost center — เฉพาะ HR และ Admin เท่านั้น
-    // เก็บแยก collection ต่างหาก ป้องกันระดับ database ไม่ใช่แค่ UI
     match /movementSalary/{movementId} {
       allow read: if isHR();
-      allow create, update: if isHR()
-                    && request.resource.data.createdBy == request.auth.uid;
+      allow create, update: if isHR();
       allow delete: if isAdmin();
     }
-
-    // role ของแต่ละ user — admin เท่านั้นที่แก้ได้ ทุกคนอ่านของตัวเองได้
     match /userRoles/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if isAdmin();
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if isAdmin() || (request.auth != null && request.auth.uid == userId
+                    && !request.resource.data.keys().hasAny(['role']));
+      allow delete: if isAdmin();
     }
-
-    // admin อ่าน userRoles ทั้งหมดได้ (สำหรับหน้าจัดการ user)
-    match /userRoles/{userId} {
-      allow read: if isAdmin();
+    match /userPrefs/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /pendingRoles/{emailKey} {
+      allow read: if request.auth != null;
+      allow create, update: if isAdmin();
+      allow delete: if request.auth != null;
     }
   }
 }
