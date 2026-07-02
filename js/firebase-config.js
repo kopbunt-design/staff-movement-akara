@@ -9,7 +9,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 
-export const firebaseConfig = {
+export cconst firebaseConfig = {
   apiKey: "AIzaSyAOD_q-wWJMWodKX_UPi7xsVWGH3hGudQQ",
   authDomain: "akara-staff-movement.firebaseapp.com",
   projectId: "akara-staff-movement",
